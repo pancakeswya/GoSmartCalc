@@ -1,4 +1,4 @@
-package deposit
+package calc
 
 /*
   #cgo CFLAGS: -I../..
@@ -8,52 +8,52 @@ package deposit
   #include "cc/core/deposit_calc.h"
   #undef __GO
 
-  typedef typeof(&CalculateDeposit) CalcDepositFnPtr;
-  typedef typeof(&FreeDepositData) FreeDepositDataFnPtr;
+  typedef typeof(&DepositCalculate) DepositCalcFnPtr;
+  typedef typeof(&DepositFreeData) DepositFreeDataFnPtr;
 
-  inline void CallDepositFnPtr(CalcDepositFnPtr fn_ptr, const DepositConditions* conds, DepositData* data) {
+  inline void CallDepositCalcFnPtr(DepositCalcFnPtr fn_ptr, const DepositConditions* conds, DepositData* data) {
 		return fn_ptr(conds, data);
   }
-  inline void CallFreeDepositDataFnPtr(FreeDepositDataFnPtr fn_ptr, DepositData* data) {
+  inline void CallDepositFreeDataFnPtr(DepositFreeDataFnPtr fn_ptr, DepositData* data) {
 		return fn_ptr(data);
   }
 */
 import "C"
 import (
+	"github.com/pancakeswya/GoSmartCalc/pkg/cconv"
 	"github.com/pancakeswya/GoSmartCalc/pkg/dll"
-	"github.com/pancakeswya/GoSmartCalc/pkg/util"
 	"slices"
 	"unsafe"
 )
 
 const (
-	PayFreqEvDay      = int(C.kDepositPayFreqEvDay)
-	PayFreqEvWeek     = int(C.kDepositPayFreqEvWeek)
-	PayFreqEvMon      = int(C.kDepositPayFreqEvMon)
-	PayFreqEvQuart    = int(C.kDepositPayFreqEvQuart)
-	PayFreqEvHalfYear = int(C.kDepositPayFreqEvHalfYear)
-	PayFreqEvYear     = int(C.kDepositPayFreqEvYear)
+	DepositPayFreqEvDay      = int(C.kDepositPayFreqEvDay)
+	DepositPayFreqEvWeek     = int(C.kDepositPayFreqEvWeek)
+	DepositPayFreqEvMon      = int(C.kDepositPayFreqEvMon)
+	DepositPayFreqEvQuart    = int(C.kDepositPayFreqEvQuart)
+	DepositPayFreqEvHalfYear = int(C.kDepositPayFreqEvHalfYear)
+	DepositPayFreqEvYear     = int(C.kDepositPayFreqEvYear)
 )
 
 const (
-	TermTypeDay   = int(C.kDepositTermTypeDay)
-	TermTypeMonth = int(C.kDepositTermTypeMonth)
-	TermTypeYear  = int(C.kDepositTermTypeYear)
+	DepositTermTypeDay   = int(C.kDepositTermTypeDay)
+	DepositTermTypeMonth = int(C.kDepositTermTypeMonth)
+	DepositTermTypeYear  = int(C.kDepositTermTypeYear)
 )
 
-type Payout struct {
+type DepositPayout struct {
 	Date [3]int
 	Sum  float64
 }
 
-type Transaction struct {
-	Payout Payout
+type DepositTransaction struct {
+	Payout DepositPayout
 	Freq   int
 }
 
-type Data struct {
-	Replen     []Payout
-	PayDates   [][3]int
+type DepositData struct {
+	Replen     []DepositPayout
+	PayDates   [][]int
 	Payment    []float64
 	Tax        []float64
 	StartDate  [3]int
@@ -64,7 +64,7 @@ type Data struct {
 	Total      float64
 }
 
-type Conditions struct {
+type DepositConditions struct {
 	TermType     int
 	Term         int
 	Cap          int
@@ -75,27 +75,34 @@ type Conditions struct {
 	IntrRate     float64
 	NonTakingRem float64
 	StartDate    [3]int
-	Fund         []Transaction
-	Wth          []Transaction
+	Fund         []DepositTransaction
+	Wth          []DepositTransaction
 }
 
-type CalcFn func(Conditions) Data
+type DepositCalcFn func(DepositConditions) DepositData
 
-type Calc struct {
-	Calculate CalcFn
+type DepositCalc struct {
+	Calculate DepositCalcFn
 }
 
-func NewCalc(dl dll.Dll) (*Calc, error) {
-	calcDepositFnPtr := (C.CalcDepositFnPtr)(dl.GetSymbolPtr("CalculateDeposit"))
-	if calcDepositFnPtr == nil {
-		return nil, dl.Error()
+func NewDeposit(dl dll.Dll) (*DepositCalc, error) {
+	var depositCalcFnPtr C.DepositCalcFnPtr
+	var depositFreeDataFnPtr C.DepositFreeDataFnPtr
+	{
+		ptr, err := dl.GetSymbolPtr("DepositCalculate")
+		if err != nil {
+			return nil, err
+		}
+		depositCalcFnPtr = C.DepositCalcFnPtr(ptr)
+
+		ptr, err = dl.GetSymbolPtr("DepositFreeData")
+		if err != nil {
+			return nil, err
+		}
+		depositFreeDataFnPtr = C.DepositFreeDataFnPtr(ptr)
 	}
-	freeDepositDataFnPtr := (C.FreeDepositDataFnPtr)(dl.GetSymbolPtr("FreeDepositData"))
-	if freeDepositDataFnPtr == nil {
-		return nil, dl.Error()
-	}
-	dc := &Calc{
-		Calculate: func(conds Conditions) Data {
+	dc := &DepositCalc{
+		Calculate: func(conds DepositConditions) DepositData {
 			cconds := C.DepositConditions{
 				term_type: C.short(conds.TermType),
 				term:      C.short(conds.Term),
@@ -120,17 +127,17 @@ func NewCalc(dl dll.Dll) (*Calc, error) {
 				wth_size: C.size_t(len(conds.Wth)),
 			}
 			var cdata C.DepositData
-			C.CallDepositFnPtr(calcDepositFnPtr, &cconds, &cdata)
+			C.CallDepositCalcFnPtr(depositCalcFnPtr, &cconds, &cdata)
 			defer func() {
 				C.free(unsafe.Pointer(cconds.fund))
 				C.free(unsafe.Pointer(cconds.wth))
-				C.CallFreeDepositDataFnPtr(freeDepositDataFnPtr, &cdata)
+				C.CallDepositFreeDataFnPtr(depositFreeDataFnPtr, &cdata)
 			}()
-			return Data{
+			return DepositData{
 				Replen:   cPayout2Go(cdata.replen, cdata.replen_size),
-				PayDates: cDates2Go(cdata.pay_dates, cdata.pay_dates_size),
-				Payment:  util.CArray2Go(unsafe.Pointer(cdata.payment), uint64(cdata.payment_size)),
-				Tax:      util.CArray2Go(unsafe.Pointer(cdata.tax), uint64(cdata.tax_size)),
+				PayDates: cconv.CInt2dArray2Go(unsafe.Pointer(cdata.pay_dates), uint64(cdata.pay_dates_size), 3),
+				Payment:  cconv.CDoubleArray2Go(unsafe.Pointer(cdata.payment), uint64(cdata.payment_size)),
+				Tax:      cconv.CDoubleArray2Go(unsafe.Pointer(cdata.tax), uint64(cdata.tax_size)),
 				StartDate: [3]int{
 					int(cdata.start_date[0]),
 					int(cdata.start_date[1]),
@@ -149,7 +156,7 @@ func NewCalc(dl dll.Dll) (*Calc, error) {
 	return dc, nil
 }
 
-func goTransaction2C(goTransactions []Transaction) *C.DepositTransaction {
+func goTransaction2C(goTransactions []DepositTransaction) *C.DepositTransaction {
 	transLen := C.size_t(len(goTransactions))
 	cTransactions := (*C.DepositTransaction)(C.malloc(transLen * C.size_t(unsafe.Sizeof(C.DepositTransaction{}))))
 	transactions := unsafe.Slice(cTransactions, transLen)
@@ -169,12 +176,12 @@ func goTransaction2C(goTransactions []Transaction) *C.DepositTransaction {
 	return cTransactions
 }
 
-func cPayout2Go(cPayouts *C.DepositPayout, len C.size_t) []Payout {
+func cPayout2Go(cPayouts *C.DepositPayout, len C.size_t) []DepositPayout {
 	payouts := unsafe.Slice(cPayouts, len)
 	slices.Reverse(payouts)
-	goPayouts := make([]Payout, len)
+	goPayouts := make([]DepositPayout, len)
 	for i, payout := range payouts {
-		goPayouts[i] = Payout{
+		goPayouts[i] = DepositPayout{
 			Date: [3]int{
 				int(C.DepositPayout(payout).date[0]),
 				int(C.DepositPayout(payout).date[1]),
@@ -184,17 +191,4 @@ func cPayout2Go(cPayouts *C.DepositPayout, len C.size_t) []Payout {
 		}
 	}
 	return goPayouts
-}
-
-func cDates2Go(cDates **C.int, len C.size_t) [][3]int {
-	dates := unsafe.Slice(cDates, len)
-	goDates := make([][3]int, len)
-	for i, date := range dates {
-		goDate := unsafe.Slice(date, 3)
-		goDates[i] = [3]int{
-			int(goDate[0]),
-			int(goDate[1]),
-			int(goDate[2])}
-	}
-	return goDates
 }

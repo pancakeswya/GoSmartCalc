@@ -2,14 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/pancakeswya/GoSmartCalc/pkg/basic"
-	"github.com/pancakeswya/GoSmartCalc/pkg/credit"
-	"github.com/pancakeswya/GoSmartCalc/pkg/deposit"
+	"github.com/pancakeswya/GoSmartCalc/internal/calc"
 	"github.com/pancakeswya/GoSmartCalc/pkg/dll"
 )
 
 func main() {
-	dl, err := dll.New("cc/build/libcalc_core.so")
+	dl, err := dll.New("cc/build/Debug/calc.dll")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -19,7 +17,7 @@ func main() {
 		return
 	}
 	defer dl.Close()
-	bc, err := basic.NewCalc(dl)
+	bc, err := calc.NewBasic(dl)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -30,12 +28,12 @@ func main() {
 		return
 	}
 	fmt.Println(res)
-	cc, err := credit.NewCalc(dl)
+	cc, err := calc.NewCredit(dl)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	data := cc.Calculate(credit.Conditions{
+	data := cc.Calculate(calc.CreditConditions{
 		Sum:        1000000,
 		IntRate:    5,
 		Term:       15,
@@ -43,12 +41,12 @@ func main() {
 		CreditType: 1,
 	})
 	fmt.Println(data)
-	dc, err := deposit.NewCalc(dl)
+	dc, err := calc.NewDeposit(dl)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	ddata := dc.Calculate(deposit.Conditions{
+	ddata := dc.Calculate(calc.DepositConditions{
 		TermType:     0,
 		Term:         120,
 		Cap:          0,
@@ -59,9 +57,9 @@ func main() {
 		IntrRate:     13.4,
 		NonTakingRem: 0,
 		StartDate:    [3]int{2023, 8, 13},
-		Fund: []deposit.Transaction{
+		Fund: []calc.DepositTransaction{
 			{
-				Payout: deposit.Payout{
+				Payout: calc.DepositPayout{
 					Date: [3]int{
 						2023, 8, 13,
 					},
@@ -70,7 +68,7 @@ func main() {
 				Freq: 2,
 			},
 			{
-				Payout: deposit.Payout{
+				Payout: calc.DepositPayout{
 					Date: [3]int{
 						2023, 12, 12,
 					},
@@ -79,9 +77,9 @@ func main() {
 				Freq: 0,
 			},
 		},
-		Wth: []deposit.Transaction{
+		Wth: []calc.DepositTransaction{
 			{
-				Payout: deposit.Payout{
+				Payout: calc.DepositPayout{
 					Date: [3]int{
 						2024, 4, 5,
 					},

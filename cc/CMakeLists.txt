@@ -25,6 +25,6 @@ add_library(CalcCore SHARED
 
 target_link_libraries(CalcCore DateTime)
 
-set_target_properties(CalcCore PROPERTIES OUTPUT_NAME "calc_core")
+set_target_properties(CalcCore PROPERTIES OUTPUT_NAME "calc")
 
 add_compile_definitions(CALC_EXPORT)

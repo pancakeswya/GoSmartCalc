@@ -47,7 +47,7 @@ CreditData CalculateDiff(const CreditConditions& conds, int mp_cnt) noexcept {
 
 }  // namespace
 
-void CALL_CONV CalculateCredit(const CreditConditions* conds, CreditData* data) {
+void CALL_CONV CreditCalculate(const CreditConditions* conds, CreditData* data) {
   int mp_cnt = (conds->term_type == kCreditTermTypeYear) ? conds->term * kDatesConstsMonthInYear
                                                          : conds->term;
   if (conds->credit_type == kCreditTypeAnnuit) {
@@ -57,7 +57,7 @@ void CALL_CONV CalculateCredit(const CreditConditions* conds, CreditData* data) 
   }
 }
 
-void CALL_CONV FreeCreditData(CreditData* data) {
+void CALL_CONV CreditFreeData(CreditData* data) {
   free(data->payments);
   *data = {};
 }

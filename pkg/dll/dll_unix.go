@@ -21,14 +21,17 @@ func newDll(path string) *UnixDll {
 	return &UnixDll{path: path}
 }
 
-func (dl *UnixDll) GetSymbolPtr(name string) unsafe.Pointer {
-	return C.dlsym(dl.handle, C.CString(name))
+func (dl *UnixDll) GetSymbolPtr(name string) (unsafe.Pointer, error) {
+	if ptr := C.dlsym(dl.handle, C.CString(name)); ptr != nil {
+		return ptr, nil
+	}
+	return nil, lastError()
 }
 
 func (dl *UnixDll) Open() error {
 	dl.handle = C.dlopen(C.CString(dl.path), C.RTLD_LAZY)
 	if dl.handle == nil {
-		return dl.Error()
+		return lastError()
 	}
 	return nil
 }
@@ -37,7 +40,7 @@ func (dl *UnixDll) Close() {
 	C.dlclose(dl.handle)
 }
 
-func (*UnixDll) Error() error {
+func lastError() error {
 	err := C.dlerror()
 	if err == nil {
 		return nil

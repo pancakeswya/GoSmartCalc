@@ -28,8 +28,8 @@ typedef struct {
   size_t payments_size;
 } CreditData;
 
-extern CALC_API void CalculateCredit(const CreditConditions* conds, CreditData* data);
-extern CALC_API void FreeCreditData(CreditData* data);
+extern CALC_API void CreditCalculate(const CreditConditions* conds, CreditData* data);
+extern CALC_API void CreditFreeData(CreditData* data);
 
 #ifndef __GO
 }; // extern "C"

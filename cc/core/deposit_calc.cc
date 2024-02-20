@@ -240,7 +240,7 @@ int** DatesConv(const std::vector<Date>& dates) noexcept {
 
 }  // namespace
 
-void CALL_CONV CalculateDeposit(const DepositConditions* conds, DepositData* data) {
+void CALL_CONV DepositCalculate(const DepositConditions* conds, DepositData* data) {
   Conditions cpp_conds = {
       .cap = static_cast<bool>(conds->cap),
       .term_type = conds->term_type,
@@ -280,7 +280,7 @@ void CALL_CONV CalculateDeposit(const DepositConditions* conds, DepositData* dat
   };
 }
 
-void CALL_CONV FreeDepositData(DepositData* data) {
+void CALL_CONV DepositFreeData(DepositData* data) {
   free(data->replen);
   free(data->tax);
   free(data->payment);

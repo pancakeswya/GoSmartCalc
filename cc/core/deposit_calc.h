@@ -73,8 +73,8 @@ typedef struct {
   size_t wth_size;
 } DepositConditions;
 
-extern CALC_API void CalculateDeposit(const DepositConditions* conds, DepositData* data);
-extern CALC_API void FreeDepositData(DepositData* data);
+extern CALC_API void DepositCalculate(const DepositConditions* conds, DepositData* data);
+extern CALC_API void DepositFreeData(DepositData* data);
 
 #ifndef __GO
 } // extern "C"

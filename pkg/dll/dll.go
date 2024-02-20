@@ -7,10 +7,9 @@ import (
 )
 
 type Dll interface {
-	GetSymbolPtr(string) unsafe.Pointer
+	GetSymbolPtr(string) (unsafe.Pointer, error)
 	Open() error
 	Close()
-	Error() error
 }
 
 func New(path string) (Dll, error) {
