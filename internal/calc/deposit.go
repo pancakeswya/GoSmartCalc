@@ -1,7 +1,6 @@
 package calc
 
 /*
-  #cgo CFLAGS: -I../..
   #include <stdlib.h>
 
   #define __GO

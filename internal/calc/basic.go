@@ -1,8 +1,6 @@
 package calc
 
 /*
-  #cgo CFLAGS: -I../..
-
   #define __GO
   #include "cc/core/basic_calc.h"
   #undef __GO

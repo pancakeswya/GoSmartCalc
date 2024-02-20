@@ -38,6 +38,7 @@ func (dl *UnixDll) Open() error {
 
 func (dl *UnixDll) Close() {
 	C.dlclose(dl.handle)
+	dl.handle = nil
 }
 
 func lastError() error {

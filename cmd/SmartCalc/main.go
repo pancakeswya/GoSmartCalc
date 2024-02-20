@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	dl, err := dll.New("cc/build/Debug/calc.dll")
+	dl, err := dll.New("internal/calc/cc/build/libcalc.so")
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -43,6 +43,7 @@ func (dl *WindowsDll) Open() error {
 
 func (dl *WindowsDll) Close() {
 	C.FreeLibrary(dl.handle)
+	dl.handle = nil
 }
 
 func lastError() error {
