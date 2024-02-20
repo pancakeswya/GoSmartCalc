@@ -146,7 +146,7 @@ void CalculateDeposit(Data& data, const Conditions& conds) {
     date.add_days(1);
   }
   if (conds.cap) {
-    data.eff_rate = (data.perc_sum * kDatesConstsAvgDaysInYear * 100.0) /
+    data.eff_rate = (data.perc_sum * double(kDatesConstsAvgDaysInYear) * 100.0) /
                     (conds.sum * am_days);
     data.total += cap_sum;
   }
@@ -240,42 +240,50 @@ int** DatesConv(const std::vector<Date>& dates) noexcept {
 
 }  // namespace
 
-DepositData CalculateDeposit(DepositConditions conds) {
+void CALL_CONV CalculateDeposit(const DepositConditions* conds, DepositData* data) {
   Conditions cpp_conds = {
-      .cap = static_cast<bool>(conds.cap),
-      .term_type = conds.term_type,
-      .term = conds.term,
-      .pay_freq = conds.pay_freq,
-      .tax_rate = conds.tax_rate,
-      .key_rate = conds.key_rate,
-      .sum = conds.sum,
-      .intr_rate = conds.intr_rate,
-      .non_taking_rem = conds.non_taking_rem,
-      .start_date = Date(conds.start_date[0],
-                         conds.start_date[1],
-                         conds.start_date[2]),
-      .fund = TransactionConv(conds.fund, conds.fund_size),
-      .wth = TransactionConv(conds.wth, conds.wth_size)
+      .cap = static_cast<bool>(conds->cap),
+      .term_type = conds->term_type,
+      .term = conds->term,
+      .pay_freq = conds->pay_freq,
+      .tax_rate = conds->tax_rate,
+      .key_rate = conds->key_rate,
+      .sum = conds->sum,
+      .intr_rate = conds->intr_rate,
+      .non_taking_rem = conds->non_taking_rem,
+      .start_date = Date(conds->start_date[0],
+                         conds->start_date[1],
+                         conds->start_date[2]),
+      .fund = TransactionConv(conds->fund, conds->fund_size),
+      .wth = TransactionConv(conds->wth, conds->wth_size)
   };
-  Data data = Calculate(cpp_conds);
-  return {
-    .replen = PayoutsConv(data.replen),
-    .replen_size = data.replen.size(),
-    .pay_dates = DatesConv(data.pay_dates),
-    .pay_dates_size = data.pay_dates.size(),
-    .payment = VectorToCArray(data.payment),
-    .payment_size = data.payment.size(),
-    .tax = VectorToCArray(data.tax),
-    .tax_size = data.tax.size(),
-    .start_date = { data.start_date.get_year(),
-                    data.start_date.get_month(),
-                    data.start_date.get_day() },
-    .finish_date = { data.finish_date.get_year(),
-                     data.finish_date.get_month(),
-                     data.finish_date.get_day() },
-    .eff_rate = data.eff_rate,
-    .perc_sum = data.perc_sum,
-    .tax_sum = data.tax_sum,
-    .total = data.total
+  Data cpp_data = Calculate(cpp_conds);
+  *data = {
+    .replen = PayoutsConv(cpp_data.replen),
+    .replen_size = cpp_data.replen.size(),
+    .pay_dates = DatesConv(cpp_data.pay_dates),
+    .pay_dates_size = cpp_data.pay_dates.size(),
+    .payment = VectorToCArray(cpp_data.payment),
+    .payment_size = cpp_data.payment.size(),
+    .tax = VectorToCArray(cpp_data.tax),
+    .tax_size = cpp_data.tax.size(),
+    .start_date = { cpp_data.start_date.get_year(),
+                    cpp_data.start_date.get_month(),
+                    cpp_data.start_date.get_day() },
+    .finish_date = { cpp_data.finish_date.get_year(),
+                     cpp_data.finish_date.get_month(),
+                     cpp_data.finish_date.get_day() },
+    .eff_rate = cpp_data.eff_rate,
+    .perc_sum = cpp_data.perc_sum,
+    .tax_sum = cpp_data.tax_sum,
+    .total = cpp_data.total
   };
+}
+
+void CALL_CONV FreeDepositData(DepositData* data) {
+  free(data->replen);
+  free(data->tax);
+  free(data->payment);
+  free(data->pay_dates);
+  *data = {};
 }

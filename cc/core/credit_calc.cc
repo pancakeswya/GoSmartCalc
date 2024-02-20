@@ -8,7 +8,7 @@
 
 namespace {
 
-CreditData CalculateAnnuit(const CreditConditions& conds, int mp_cnt) {
+CreditData CalculateAnnuit(const CreditConditions& conds, int mp_cnt) noexcept {
   CreditData data = {};
   double r = conds.int_rate / (kDatesConstsMonthInYear * 100);
   double ann_k =
@@ -26,7 +26,7 @@ CreditData CalculateAnnuit(const CreditConditions& conds, int mp_cnt) {
   return data;
 }
 
-CreditData CalculateDiff(const CreditConditions& conds, int mp_cnt) {
+CreditData CalculateDiff(const CreditConditions& conds, int mp_cnt) noexcept {
   CreditData data = {};
   double rest = conds.sum, payment;
   double mp_real = conds.sum / (mp_cnt);
@@ -47,11 +47,17 @@ CreditData CalculateDiff(const CreditConditions& conds, int mp_cnt) {
 
 }  // namespace
 
-CreditData CalculateCredit(CreditConditions conds) {
-  int mp_cnt = (conds.term_type == kCreditTermTypeYear) ? conds.term * kDatesConstsMonthInYear
-                                                        : conds.term;
-  if (conds.credit_type == kCreditTypeAnnuit) {
-    return CalculateAnnuit(conds, mp_cnt);
+void CALL_CONV CalculateCredit(const CreditConditions* conds, CreditData* data) {
+  int mp_cnt = (conds->term_type == kCreditTermTypeYear) ? conds->term * kDatesConstsMonthInYear
+                                                         : conds->term;
+  if (conds->credit_type == kCreditTypeAnnuit) {
+    *data = CalculateAnnuit(*conds, mp_cnt);
+  } else {
+    *data = CalculateDiff(*conds, mp_cnt);
   }
-  return CalculateDiff(conds, mp_cnt);
+}
+
+void CALL_CONV FreeCreditData(CreditData* data) {
+  free(data->payments);
+  *data = {};
 }

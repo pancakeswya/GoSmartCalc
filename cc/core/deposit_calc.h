@@ -1,22 +1,24 @@
 #ifndef SMARTCALC_CC_CORE_DEPOSIT_CALC_H_
 #define SMARTCALC_CC_CORE_DEPOSIT_CALC_H_
 
+#include "calc_api.h"
+
 #include <stddef.h>
 
 #ifndef __GO
 extern "C" {
 #endif
 
-enum DepositTermType { kDepositTermTypeDay, kDepositTermTypeMonth, kDepositTermTypeYear };
+typedef enum { kDepositTermTypeDay, kDepositTermTypeMonth, kDepositTermTypeYear } DepositTermType;
 
-enum DepositPayFreq {
+typedef enum {
   kDepositPayFreqEvDay,
   kDepositPayFreqEvWeek,
   kDepositPayFreqEvMon,
   kDepositPayFreqEvQuart,
   kDepositPayFreqEvHalfYear,
   kDepositPayFreqEvYear
-};
+} DepositPayFreq;
 
 typedef struct {
   int date[3];
@@ -71,7 +73,8 @@ typedef struct {
   size_t wth_size;
 } DepositConditions;
 
-extern DepositData CalculateDeposit(DepositConditions conds);
+extern CALC_API void CalculateDeposit(const DepositConditions* conds, DepositData* data);
+extern CALC_API void FreeDepositData(DepositData* data);
 
 #ifndef __GO
 } // extern "C"

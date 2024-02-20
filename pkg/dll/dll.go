@@ -17,5 +17,5 @@ func New(path string) (Dll, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil, errors.New("file does not exists")
 	}
-	return &UnixDll{path: path}, nil
+	return newDll(path), nil
 }

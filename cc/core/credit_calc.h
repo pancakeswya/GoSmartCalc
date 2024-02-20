@@ -1,15 +1,17 @@
 #ifndef SMARTCALC_CC_CORE_CREDIT_CALC_H_
 #define SMARTCALC_CC_CORE_CREDIT_CALC_H_
 
+#include "calc_api.h"
+
 #include <stddef.h>
 
 #ifndef __GO
 extern "C" {
 #endif
 
-enum CreditType { kCreditTypeAnnuit, kCreditTypeDiff };
+typedef enum { kCreditTypeAnnuit, kCreditTypeDiff } CreditType;
 
-enum CreditTermType { kCreditTermTypeMonth, kCreditTermTypeYear };
+typedef enum { kCreditTermTypeMonth, kCreditTermTypeYear } CreditTermType;
 
 typedef struct {
   double sum;
@@ -26,7 +28,8 @@ typedef struct {
   size_t payments_size;
 } CreditData;
 
-extern CreditData CalculateCredit(CreditConditions conds);
+extern CALC_API void CalculateCredit(const CreditConditions* conds, CreditData* data);
+extern CALC_API void FreeCreditData(CreditData* data);
 
 #ifndef __GO
 }; // extern "C"

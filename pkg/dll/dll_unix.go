@@ -1,9 +1,9 @@
+//go:build unix
+
 package dll
 
 /*
-  #cgo CFLAGS: -I../../..
   #include <dlfcn.h>
-  #include "cc/core/defs.h"
 */
 import "C"
 import (
@@ -15,6 +15,10 @@ type UnixDll struct {
 	Dll
 	path   string
 	handle unsafe.Pointer
+}
+
+func newDll(path string) *UnixDll {
+	return &UnixDll{path: path}
 }
 
 func (dl *UnixDll) GetSymbolPtr(name string) unsafe.Pointer {
@@ -34,6 +38,10 @@ func (dl *UnixDll) Close() {
 }
 
 func (*UnixDll) Error() error {
-	errStr := C.GoString(C.dlerror())
+	err := C.dlerror()
+	if err == nil {
+		return nil
+	}
+	errStr := C.GoString(err)
 	return errors.New(errStr)
 }

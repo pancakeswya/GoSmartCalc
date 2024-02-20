@@ -1,8 +1,7 @@
 package credit
 
 /*
-  #cgo CFLAGS: -I../../..
-  #include <dlfcn.h>
+  #cgo CFLAGS: -I../..
   #include <stdlib.h>
 
   #define __GO
@@ -10,15 +9,20 @@ package credit
   #undef __GO
 
   typedef typeof(&CalculateCredit) CalcCreditFnPtr;
+  typedef typeof(&FreeCreditData) FreeCreditDataFnPtr;
 
-  inline CreditData CallCalcCreditFnPtr(CalcCreditFnPtr fn_ptr, CreditConditions conds) {
-		return fn_ptr(conds);
+  inline void CallCalcCreditFnPtr(CalcCreditFnPtr fn_ptr, const CreditConditions* conds, CreditData* data) {
+		return fn_ptr(conds, data);
+  }
+
+  inline void CallFreeCreditDataFnPtr(FreeCreditDataFnPtr fn_ptr, CreditData* data) {
+		return fn_ptr(data);
   }
 */
 import "C"
 import (
-	"SmartCalc/pkg/core/dll"
-	"SmartCalc/pkg/core/util"
+	"github.com/pancakeswya/GoSmartCalc/pkg/dll"
+	"github.com/pancakeswya/GoSmartCalc/pkg/util"
 	"unsafe"
 )
 
@@ -57,6 +61,10 @@ func NewCalc(dl dll.Dll) (*Calc, error) {
 	if calcCreditFnPtr == nil {
 		return nil, dl.Error()
 	}
+	freeCreditDataFnPtr := (C.FreeCreditDataFnPtr)(dl.GetSymbolPtr("FreeCreditData"))
+	if freeCreditDataFnPtr == nil {
+		return nil, dl.Error()
+	}
 	bc := &Calc{
 		Calculate: func(conds Conditions) Data {
 			cconds := C.CreditConditions{
@@ -66,8 +74,9 @@ func NewCalc(dl dll.Dll) (*Calc, error) {
 				term_type:   C.int(conds.TermType),
 				credit_type: C.int(conds.CreditType),
 			}
-			cdata := C.CallCalcCreditFnPtr(calcCreditFnPtr, cconds)
-			defer C.free(unsafe.Pointer(cdata.payments))
+			var cdata C.CreditData
+			C.CallCalcCreditFnPtr(calcCreditFnPtr, &cconds, &cdata)
+			defer C.CallFreeCreditDataFnPtr(freeCreditDataFnPtr, &cdata)
 			return Data{
 				Total:    float64(cdata.total),
 				Overpay:  float64(cdata.overpay),

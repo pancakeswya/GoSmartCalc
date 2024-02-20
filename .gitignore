@@ -1,4 +1,5 @@
 # dirs
+.idea*
 build*
 cmake-build*
 # Prerequisites

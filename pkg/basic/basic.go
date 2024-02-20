@@ -1,8 +1,7 @@
 package basic
 
 /*
-  #cgo CFLAGS: -I../../..
-  #include <dlfcn.h>
+  #cgo CFLAGS: -I../..
 
   #define __GO
   #include "cc/core/basic_calc.h"
@@ -21,8 +20,8 @@ package basic
 */
 import "C"
 import (
-	"SmartCalc/pkg/core/dll"
 	"errors"
+	"github.com/pancakeswya/GoSmartCalc/pkg/dll"
 )
 
 var kErrorStr = [C.kBasicCalcErrorsLen]string{

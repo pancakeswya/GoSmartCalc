@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.26)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wextra -O3")
+set(CMAKE_CXX_STANDARD 20)
+if(UNIX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wextra -O3")
+endif(UNIX)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include_directories("third_party/DateTime/src")
@@ -24,3 +26,5 @@ add_library(CalcCore SHARED
 target_link_libraries(CalcCore DateTime)
 
 set_target_properties(CalcCore PROPERTIES OUTPUT_NAME "calc_core")
+
+add_compile_definitions(CALC_EXPORT)

@@ -1,11 +1,13 @@
 #ifndef SMARTCALC_CC_CORE_BASIC_CALC_H_
 #define SMARTCALC_CC_CORE_BASIC_CALC_H_
 
+#include "calc_api.h"
+
 #ifndef __GO
 extern "C" {
 #endif
 
-enum BasicCalcError {
+typedef enum {
   kBasicCalcErrorSuccess,
   kBasicCalcErrorInvalidSyntax,
   kBasicCalcErrorBracesNotMatching,
@@ -15,10 +17,10 @@ enum BasicCalcError {
   kBasicCalcErrorInvalidXExpr,
   kBasicCalcErrorInvalidExpr,
   kBasicCalcErrorsLen
-};
+} BasicCalcError;
 
-extern double BasicCalculateExpr(const char* math_expr, int* error);
-extern double BasicCalculateEquation(const char* math_expr, double x, int* error);
+extern CALC_API double BasicCalculateExpr(const char* math_expr, int* error);
+extern CALC_API double BasicCalculateEquation(const char* math_expr, double x, int* error);
 
 #ifndef __GO
 } // extern "C"

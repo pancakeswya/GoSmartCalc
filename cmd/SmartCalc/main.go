@@ -1,11 +1,11 @@
 package main
 
 import (
-	"SmartCalc/pkg/core/basic"
-	"SmartCalc/pkg/core/credit"
-	"SmartCalc/pkg/core/deposit"
-	"SmartCalc/pkg/core/dll"
 	"fmt"
+	"github.com/pancakeswya/GoSmartCalc/pkg/basic"
+	"github.com/pancakeswya/GoSmartCalc/pkg/credit"
+	"github.com/pancakeswya/GoSmartCalc/pkg/deposit"
+	"github.com/pancakeswya/GoSmartCalc/pkg/dll"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	res, err := bc.CalculateEquation("x * 5 + x * 2", 5)
+	res, err := bc.CalculateEquation("15/(7-(1+1))*3-(2+(1+1))*15/(7-(200+1))*3-(2+(1+1))*(15/(7-(1+1))*3-(2+(1+1))+15/(7-(1+1))*3-(2+(1+1)))", 5)
 	if err != nil {
 		fmt.Println(err)
 		return

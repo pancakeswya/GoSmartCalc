@@ -86,7 +86,7 @@ const std::unordered_map<std::string_view, Operation> operations_map = {
     {"-", Operation(Operation::Type::kBinary, Operation::Priority::kSimple,
                     [](double num1, double num2) { return num1 - num2; })},
     {"(", Operation(Operation::Type::kUnary, Operation::Priority::kBrace,
-                    (double (*)(double)){})}};
+                    [](double) -> double { return 0; })}};
 
 
 template <typename Tp>
@@ -254,7 +254,7 @@ inline bool ReplaceXInString(std::string& expr, const std::string& number) {
 
 } // namespace
 
-double BasicCalculateExpr(const char* math_expr, int* err) {
+double CALL_CONV BasicCalculateExpr(const char* math_expr, int* err) {
   *err = kBasicCalcErrorSuccess;
   bool prev_was_num = false;
   std::string expr(math_expr);
@@ -296,7 +296,16 @@ double BasicCalculateExpr(const char* math_expr, int* err) {
           return 0;
         }
         break;
-      case '0' ... '9': {
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9': {
         auto [stat, incr] = ProcessNumber(&expr[i], prev_was_num, numbers);
         if (stat != kBasicCalcErrorSuccess) {
           *err = stat;
@@ -334,7 +343,7 @@ double BasicCalculateExpr(const char* math_expr, int* err) {
   return numbers.top();
 }
 
-double BasicCalculateEquation(const char* math_expr, double x, int* err) {
+double CALL_CONV BasicCalculateEquation(const char* math_expr, double x, int* err) {
   std::string expr(math_expr);
   if (!ReplaceXInString(expr, std::to_string(x))) {
     *err = kBasicCalcErrorInvalidXExpr;
