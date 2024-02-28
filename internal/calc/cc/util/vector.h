@@ -53,6 +53,6 @@ static void* VectorAllocNewMember(void* vec, size_t member_size) {
 }
 
 #define VectorNew(_type) VectorInit(sizeof(_type))
-#define VectorPush(_vec, _val) ((_vec = VectorAllocNewMember(_vec, sizeof(_val))) ? (_vec)[VectorSize(_vec) - 1] = _val, true : false)
+#define VectorPush(_vec, _val) ((_vec = VectorAllocNewMember(_vec, sizeof(_val))) ? (_vec)[VectorSize(_vec) - 1] = _val, 1 : 0)
 
 #endif // SMARTCALC_INTERNAL_UTIL_CC_CORE_VECTOR_H_

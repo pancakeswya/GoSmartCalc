@@ -5,8 +5,6 @@ package calc
   #include "cc/deposit_calc.h"
   #include "cc/util/vector.h"
 
-  #include <stdlib.h>
-
   typedef typeof(&DepositCalculate) DepositCalcFnPtr;
   typedef typeof(&DepositDestroyData) DepositDestroyDataFnPtr;
 

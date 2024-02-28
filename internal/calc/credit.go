@@ -3,8 +3,6 @@ package calc
 /*
   #include "cc/credit_calc.h"
 
-  #include <stdlib.h>
-
   typedef typeof(&CreditCalculate) CreditCalcFnPtr;
   typedef typeof(&CreditDestroyData) CreditDestroyDataFnPtr;
 
