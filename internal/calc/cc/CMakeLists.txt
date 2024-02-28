@@ -1,30 +1,36 @@
 cmake_minimum_required(VERSION 3.26)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_C_STANDARD 11)
 if(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wextra -O3")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -Wextra -O3")
 endif(UNIX)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-include_directories("third_party/DateTime/src")
-include_directories(".")
-
-add_library(DateTime STATIC
-                third_party/DateTime/src/timespan.cpp
-                third_party/DateTime/src/timespan.h
-                third_party/DateTime/src/datetime.cpp
-                third_party/DateTime/src/datetime.h)
-
 add_library(CalcCore SHARED
-            core/basic_calc.cc
-            core/basic_calc.h
-            core/credit_calc.cc
-            core/credit_calc.h
-            core/deposit_calc.cc
-            core/deposit_calc.h)
+            api.h
+            basic_calc.c
+            basic_calc.h
+            credit_calc.c
+            credit_calc.h
+            defs.h
+            deposit_calc.c
+            deposit_calc.h
+            util/date.h
+            util/math_operation.h
+            util/stack_double.c
+            util/stack_double.h
+            util/stack_operation.c
+            util/stack_operation.h
+            util/str_util.c
+            util/str_util.h
+            util/vector.h
+)
 
-target_link_libraries(CalcCore DateTime)
+find_library(MATH_LIBRARY m)
+if(MATH_LIBRARY)
+    target_link_libraries(CalcCore PUBLIC ${MATH_LIBRARY})
+endif()
 
 set_target_properties(CalcCore PROPERTIES OUTPUT_NAME "calc")
 
-add_compile_definitions(CALC_EXPORT)
+add_compile_definitions(CALC_SHARED CALC_EXPORT)

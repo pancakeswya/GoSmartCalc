@@ -1,38 +1,42 @@
 package calc
 
 /*
+  #include "cc/credit_calc.h"
+
   #include <stdlib.h>
 
-  #define __GO
-  #include "cc/core/credit_calc.h"
-  #undef __GO
-
   typedef typeof(&CreditCalculate) CreditCalcFnPtr;
-  typedef typeof(&CreditFreeData) CreditFreeDataFnPtr;
+  typedef typeof(&CreditDestroyData) CreditDestroyDataFnPtr;
 
-  inline void CallCreditCalcFnPtr(CreditCalcFnPtr fn_ptr, const CreditConditions* conds, CreditData* data) {
+  static inline CreditCalcError CallCreditCalcFnPtr(CreditCalcFnPtr fn_ptr, const CreditConditions* conds, CreditData* data) {
 		return fn_ptr(conds, data);
   }
 
-  inline void CallCreditFreeDataFnPtr(CreditFreeDataFnPtr fn_ptr, CreditData* data) {
+  static inline void CallCreditDestroyDataFnPtr(CreditDestroyDataFnPtr fn_ptr, CreditData* data) {
 		return fn_ptr(data);
   }
 */
 import "C"
 import (
+	"errors"
 	"github.com/pancakeswya/GoSmartCalc/pkg/cconv"
 	"github.com/pancakeswya/GoSmartCalc/pkg/dll"
 	"unsafe"
 )
 
+var kCreditCalcErrs = []string{
+	"success",
+	"allocation fail",
+}
+
 const (
-	CreditTypeAnnuit = int(C.kCreditTypeAnnuit)
-	CreditTypeDiff   = int(C.kCreditTypeDiff)
+	KCreditTypeAnnuit = int(C.kCreditTypeAnnuit)
+	KCreditTypeDiff   = int(C.kCreditTypeDiff)
 )
 
 const (
-	CreditTermTypeMonth = int(C.kCreditTermTypeMonth)
-	CreditTermTypeYear  = int(C.kCreditTermTypeYear)
+	KCreditTermTypeMonth = int(C.kCreditTermTypeMonth)
+	KCreditTermTypeYear  = int(C.kCreditTermTypeYear)
 )
 
 type CreditConditions struct {
@@ -49,46 +53,50 @@ type CreditData struct {
 	Payments []float64
 }
 
-type CreditCalcFn func(CreditConditions) CreditData
+type CreditCalcFn func(CreditConditions) (CreditData, error)
 
 type CreditCalc struct {
 	Calculate CreditCalcFn
 }
 
 func NewCredit(dl dll.Dll) (*CreditCalc, error) {
-	var creditCalcFnPtr C.CreditCalcFnPtr
-	var creditFreeDataFnPtr C.CreditFreeDataFnPtr
-	{
-		ptr, err := dl.GetSymbolPtr("CreditCalculate")
-		if err != nil {
-			return nil, err
-		}
-		creditCalcFnPtr = C.CreditCalcFnPtr(ptr)
-
-		ptr, err = dl.GetSymbolPtr("CreditFreeData")
-		if err != nil {
-			return nil, err
-		}
-		creditFreeDataFnPtr = C.CreditFreeDataFnPtr(ptr)
+	ptr, err := dl.GetSymbolPtr("CreditCalculate")
+	if err != nil {
+		return nil, err
 	}
+	creditCalcFnPtr := C.CreditCalcFnPtr(ptr)
+
+	ptr, err = dl.GetSymbolPtr("CreditDestroyData")
+	if err != nil {
+		return nil, err
+	}
+	CreditDestroyDataFnPtr := C.CreditDestroyDataFnPtr(ptr)
+
 	bc := &CreditCalc{
-		Calculate: func(conds CreditConditions) CreditData {
+		Calculate: func(conds CreditConditions) (CreditData, error) {
 			cconds := C.CreditConditions{
 				sum:         C.double(conds.Sum),
 				int_rate:    C.double(conds.IntRate),
-				term:        C.short(conds.Term),
-				term_type:   C.int(conds.TermType),
-				credit_type: C.int(conds.CreditType),
+				term:        C.ushort(conds.Term),
+				term_type:   C.CreditTermType(conds.TermType),
+				credit_type: C.CreditType(conds.CreditType),
 			}
 			var cdata C.CreditData
-			C.CallCreditCalcFnPtr(creditCalcFnPtr, &cconds, &cdata)
-			defer C.CallCreditFreeDataFnPtr(creditFreeDataFnPtr, &cdata)
+			if cerr := C.CallCreditCalcFnPtr(creditCalcFnPtr, &cconds, &cdata); cerr != C.kCreditCalcErrorSuccess {
+				return CreditData{}, newCreditCalcError(cerr)
+			}
+			defer C.CallCreditDestroyDataFnPtr(CreditDestroyDataFnPtr, &cdata)
 			return CreditData{
 				Total:    float64(cdata.total),
 				Overpay:  float64(cdata.overpay),
 				Payments: cconv.CDoubleArray2Go(unsafe.Pointer(cdata.payments), uint64(cdata.payments_size)),
-			}
+			}, nil
 		},
 	}
 	return bc, nil
+}
+
+func newCreditCalcError(errCode C.CreditCalcError) error {
+	errStr := kCreditCalcErrs[errCode]
+	return errors.New(errStr)
 }

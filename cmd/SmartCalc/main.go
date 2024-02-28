@@ -22,7 +22,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	res, err := bc.CalculateEquation("15/(7-(1+1))*3-(2+(1+1))*15/(7-(200+1))*3-(2+(1+1))*(15/(7-(1+1))*3-(2+(1+1))+15/(7-(1+1))*3-(2+(1+1)))", 5)
+	res, err := bc.CalculateEquation("15/(7-(1+1))*3-(2+(1+1))*15/(7-(200+1))*3-(2+(1+1))*(15/(7-(1+1))*3-(2+(1+1))+15/(7-(1+1))*3-(2+(1+1)))", 4)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -33,20 +33,24 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	data := cc.Calculate(calc.CreditConditions{
+	data, err := cc.Calculate(calc.CreditConditions{
 		Sum:        1000000,
 		IntRate:    5,
 		Term:       15,
 		TermType:   1,
 		CreditType: 1,
 	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	fmt.Println(data)
 	dc, err := calc.NewDeposit(dl)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	ddata := dc.Calculate(calc.DepositConditions{
+	ddata, err := dc.Calculate(calc.DepositConditions{
 		TermType:     0,
 		Term:         120,
 		Cap:          0,
@@ -89,5 +93,9 @@ func main() {
 			},
 		},
 	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	fmt.Println(ddata)
 }

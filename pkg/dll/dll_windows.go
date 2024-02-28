@@ -6,7 +6,11 @@ package dll
 #include <windows.h>
 
 int MAKE_LANG_ID(int p, int s) {
+#ifdef MAKELANGID
     return MAKELANGID(p, s);
+#else
+	return LANG_SYSTEM_DEFAULT;
+#endif
 }
 */
 import "C"
