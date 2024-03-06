@@ -16,8 +16,7 @@ typedef enum {
   kBasicCalcErrorIncorrectOperatorUsage,
   kBasicCalcErrorIncorrectFunctionUsage,
   kBasicCalcErrorInvalidXExpr,
-  kBasicCalcErrorInvalidExpr,
-  kBasicCalcErrorsLen
+  kBasicCalcErrorInvalidExpr
 } BasicCalcError;
 
 extern CALC_API BasicCalcError BasicCalculateExpr(const char* math_expr, double* res);

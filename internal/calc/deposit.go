@@ -35,69 +35,74 @@ import (
 	"unsafe"
 )
 
-var kDepositCalcErrs = []string{
-	"success",
-	"allocation fail",
-}
-
-const (
-	KDepositPayFreqEvDay      = int(C.kDepositPayFreqEvDay)
-	KDepositPayFreqEvWeek     = int(C.kDepositPayFreqEvWeek)
-	KDepositPayFreqEvMon      = int(C.kDepositPayFreqEvMon)
-	KDepositPayFreqEvQuart    = int(C.kDepositPayFreqEvQuart)
-	KDepositPayFreqEvHalfYear = int(C.kDepositPayFreqEvHalfYear)
-	KDepositPayFreqEvYear     = int(C.kDepositPayFreqEvYear)
-)
-
-const (
-	KDepositTermTypeDay   = int(C.kDepositTermTypeDay)
-	KDepositTermTypeMonth = int(C.kDepositTermTypeMonth)
-	KDepositTermTypeYear  = int(C.kDepositTermTypeYear)
-)
-
-type DepositPayout struct {
-	Date [3]int
-	Sum  float64
-}
-
-type DepositTransaction struct {
-	Payout DepositPayout
-	Freq   int
-}
-
-type DepositData struct {
-	Replen     []DepositPayout
-	PayDates   [][]int
-	Payment    []float64
-	Tax        []float64
-	StartDate  [3]int
-	FinishDate [3]int
-	EffRate    float64
-	PercSum    float64
-	TaxSum     float64
-	Total      float64
-}
-
-type DepositConditions struct {
-	TermType     int
-	Term         int
-	Cap          int
-	PayFreq      int
-	TaxRate      float64
-	KeyRate      float64
-	Sum          float64
-	IntrRate     float64
-	NonTakingRem float64
-	StartDate    [3]int
-	Fund         []DepositTransaction
-	Wth          []DepositTransaction
-}
-
 type DepositCalcFn func(DepositConditions) (DepositData, error)
 
-type DepositCalc struct {
-	Calculate DepositCalcFn
-}
+type (
+	DepositPayout struct {
+		Date [3]int
+		Sum  float64
+	}
+	DepositTransaction struct {
+		Payout DepositPayout
+		Freq   int
+	}
+	DepositData struct {
+		Replen     []DepositPayout
+		PayDates   [][]int
+		Payment    []float64
+		Tax        []float64
+		StartDate  [3]int
+		FinishDate [3]int
+		EffRate    float64
+		PercSum    float64
+		TaxSum     float64
+		Total      float64
+	}
+	DepositConditions struct {
+		TermType     int
+		Term         int
+		Cap          int
+		PayFreq      int
+		TaxRate      float64
+		KeyRate      float64
+		Sum          float64
+		IntrRate     float64
+		NonTakingRem float64
+		StartDate    [3]int
+		Fund         []DepositTransaction
+		Wth          []DepositTransaction
+	}
+	DepositCalc struct {
+		Calculate DepositCalcFn
+	}
+)
+
+// deposit payout frequency
+const (
+	NumDepositPayFreqEvDay      = int(C.kDepositPayFreqEvDay)
+	NumDepositPayFreqEvWeek     = int(C.kDepositPayFreqEvWeek)
+	NumDepositPayFreqEvMon      = int(C.kDepositPayFreqEvMon)
+	NumDepositPayFreqEvQuart    = int(C.kDepositPayFreqEvQuart)
+	NumDepositPayFreqEvHalfYear = int(C.kDepositPayFreqEvHalfYear)
+	NumDepositPayFreqEvYear     = int(C.kDepositPayFreqEvYear)
+)
+
+// deposit term type
+const (
+	NumDepositTermTypeDay   = int(C.kDepositTermTypeDay)
+	NumDepositTermTypeMonth = int(C.kDepositTermTypeMonth)
+	NumDepositTermTypeYear  = int(C.kDepositTermTypeYear)
+)
+
+var (
+	ErrDepositCalcSuccess   = errors.New("success")
+	ErrDepositCalcAllocFail = errors.New("allocation fail")
+
+	errDepositCalcErrs = [...]error{
+		ErrDepositCalcSuccess,
+		ErrDepositCalcAllocFail,
+	}
+)
 
 func NewDeposit(dl dll.Dll) (*DepositCalc, error) {
 	ptr, err := dl.GetSymbolPtr("DepositCalculate")
@@ -131,20 +136,20 @@ func NewDeposit(dl dll.Dll) (*DepositCalc, error) {
 					C.int(conds.StartDate[1]),
 					C.int(conds.StartDate[2])),
 			}
-			var cerr C.DepositCalcError
-			cconds.fund, cerr = goTransaction2C(conds.Fund)
-			if cerr != C.kDepositCalcErrorSuccess {
-				return DepositData{}, newDepositCalcError(cerr)
+			var errCode C.DepositCalcError
+			cconds.fund, errCode = goTransaction2C(conds.Fund)
+			if errCode != C.kDepositCalcErrorSuccess {
+				return DepositData{}, errDepositCalcErrs[errCode]
 			}
-			cconds.wth, cerr = goTransaction2C(conds.Wth)
-			if cerr != C.kDepositCalcErrorSuccess {
-				return DepositData{}, newDepositCalcError(cerr)
+			cconds.wth, errCode = goTransaction2C(conds.Wth)
+			if errCode != C.kDepositCalcErrorSuccess {
+				return DepositData{}, errDepositCalcErrs[errCode]
 			}
 
 			var cdata C.DepositData
-			cerr = C.CallDepositCalcFnPtr(depositCalcFnPtr, &cconds, &cdata)
-			if cerr != C.kDepositCalcErrorSuccess {
-				return DepositData{}, newDepositCalcError(cerr)
+			errCode = C.CallDepositCalcFnPtr(depositCalcFnPtr, &cconds, &cdata)
+			if errCode != C.kDepositCalcErrorSuccess {
+				return DepositData{}, errDepositCalcErrs[errCode]
 			}
 			defer func() {
 				C.VectorDelete(unsafe.Pointer(cconds.fund))
@@ -227,9 +232,4 @@ func cPayout2Go(cPayouts *C.DepositPayout, len C.size_t) []DepositPayout {
 		}
 	}
 	return goPayouts
-}
-
-func newDepositCalcError(errCode C.DepositCalcError) error {
-	errStr := kDepositCalcErrs[errCode]
-	return errors.New(errStr)
 }

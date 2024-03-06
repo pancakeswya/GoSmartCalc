@@ -22,49 +22,63 @@ import (
 	"unsafe"
 )
 
-var kCreditCalcErrs = []string{
-	"success",
-	"allocation fail",
-}
-
-const (
-	KCreditTypeAnnuit = int(C.kCreditTypeAnnuit)
-	KCreditTypeDiff   = int(C.kCreditTypeDiff)
-)
-
-const (
-	KCreditTermTypeMonth = int(C.kCreditTermTypeMonth)
-	KCreditTermTypeYear  = int(C.kCreditTermTypeYear)
-)
-
-type CreditConditions struct {
-	Sum        float64
-	IntRate    float64
-	Term       int
-	TermType   int
-	CreditType int
-}
-
-type CreditData struct {
-	Total    float64
-	Overpay  float64
-	Payments []float64
-}
-
 type CreditCalcFn func(CreditConditions) (CreditData, error)
 
-type CreditCalc struct {
-	Calculate CreditCalcFn
-}
+type (
+	CreditConditions struct {
+		Sum        float64
+		IntRate    float64
+		Term       int
+		TermType   int
+		CreditType int
+	}
+	CreditData struct {
+		Total    float64
+		Overpay  float64
+		Payments []float64
+	}
+	CreditCalc struct {
+		Calculate CreditCalcFn
+	}
+)
+
+// credit type
+const (
+	NumCreditTypeAnnuit = int(C.kCreditTypeAnnuit)
+	NumCreditTypeDiff   = int(C.kCreditTypeDiff)
+)
+
+// credit term type
+const (
+	NumCreditTermTypeMonth = int(C.kCreditTermTypeMonth)
+	NumCreditTermTypeYear  = int(C.kCreditTermTypeYear)
+)
+
+// functions api name
+const (
+	strCreditCalculateFuncName   = "CreditCalculate"
+	strCreditDestroyDataFuncName = "CreditDestroyData"
+)
+
+// errors that may occur
+var (
+	ErrCreditCalcSuccess   = errors.New("success")
+	ErrCreditCalcAllocFail = errors.New("allocation fail")
+
+	errsCreditCalc = [...]error{
+		ErrCreditCalcSuccess,
+		ErrCreditCalcAllocFail,
+	}
+)
 
 func NewCredit(dl dll.Dll) (*CreditCalc, error) {
-	ptr, err := dl.GetSymbolPtr("CreditCalculate")
+	ptr, err := dl.GetSymbolPtr(strCreditCalculateFuncName)
 	if err != nil {
 		return nil, err
 	}
 	creditCalcFnPtr := C.CreditCalcFnPtr(ptr)
 
-	ptr, err = dl.GetSymbolPtr("CreditDestroyData")
+	ptr, err = dl.GetSymbolPtr(strCreditDestroyDataFuncName)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +95,7 @@ func NewCredit(dl dll.Dll) (*CreditCalc, error) {
 			}
 			var cdata C.CreditData
 			if cerr := C.CallCreditCalcFnPtr(creditCalcFnPtr, &cconds, &cdata); cerr != C.kCreditCalcErrorSuccess {
-				return CreditData{}, newCreditCalcError(cerr)
+				return CreditData{}, errsCreditCalc[cerr]
 			}
 			defer C.CallCreditDestroyDataFnPtr(CreditDestroyDataFnPtr, &cdata)
 			return CreditData{
@@ -92,9 +106,4 @@ func NewCredit(dl dll.Dll) (*CreditCalc, error) {
 		},
 	}
 	return bc, nil
-}
-
-func newCreditCalcError(errCode C.CreditCalcError) error {
-	errStr := kCreditCalcErrs[errCode]
-	return errors.New(errStr)
 }
