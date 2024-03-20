@@ -1,7 +1,6 @@
 #include "basic_calc.h"
 #include "util/str_util.h"
-#include "util/stack_double.h"
-#include "util/stack_operation.h"
+#include "util/stack.h"
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -244,11 +243,11 @@ static BasicCalcError FindFunction(char** ptr_ptr, MathOperation* operation) {
 }
 
 static BasicCalcError ShuntYardAlgo(StackDouble** num_stack, StackOperation** op_stack) {
-  MathOperation op = StackOperationPop(op_stack);
+  MathOperation op = StackPop(op_stack);
   if (!*op_stack) {
     return kBasicCalcErrorInvalidSyntax;
   }
-  double num1 = StackDoublePop(num_stack);
+  double num1 = StackPop(num_stack);
   if (!*num_stack) {
     return kBasicCalcErrorInvalidSyntax;
   }
@@ -259,13 +258,13 @@ static BasicCalcError ShuntYardAlgo(StackDouble** num_stack, StackOperation** op
   if (op.type == kUnary) {
     res = op.function.unary(num1);
   } else {
-    double num2 = StackDoublePop(num_stack);
+    double num2 = StackPop(num_stack);
     if (!*num_stack) {
       return kBasicCalcErrorInvalidSyntax;
     }
     res = op.function.binary(num2, num1);
   }
-  *num_stack = StackDoublePush(*num_stack, res);
+  *num_stack = StackPush(*num_stack, res);
   if (!*num_stack) {
     return kBasicCalcAllocationFail;
   }
@@ -282,7 +281,7 @@ static BasicCalcError ShuntYardBrace(StackDouble** num_stack, StackOperation** o
   if ((*op_stack)->size == 0) {
     return kBasicCalcErrorBracesNotMatching;
   }
-  StackOperationPop(op_stack);
+  StackPop(op_stack);
   return kBasicCalcErrorSuccess;
 }
 
@@ -293,7 +292,7 @@ static BasicCalcError ShuntYardOperation(const MathOperation* op, StackDouble** 
       return error;
     }
   }
-  *op_stack = StackOperationPush(*op_stack, *op);
+  *op_stack = StackPush(*op_stack, *op);
   if (!*op_stack) {
     return kBasicCalcAllocationFail;
   }
@@ -368,7 +367,7 @@ static inline BasicCalcError ProcessFunction(char** ptr_ptr, StackOperation** op
   if (error != kBasicCalcErrorSuccess) {
     return error;
   }
-  *op_stack = StackOperationPush(*op_stack, function);
+  *op_stack = StackPush(*op_stack, function);
   if (!*op_stack) {
     return kBasicCalcAllocationFail;
   }
@@ -382,7 +381,7 @@ static inline BasicCalcError ProcessNumber(char** expr, StackDouble** num_stack)
   if (ptr == end) {
     return kBasicCalcErrorIncorrectNumberUsage;
   }
-  *num_stack = StackDoublePush(*num_stack, num);
+  *num_stack = StackPush(*num_stack, num);
   if (!*num_stack) {
     return kBasicCalcAllocationFail;
   }
@@ -422,11 +421,11 @@ BasicCalcError CALL_CONV BasicCalculateExpr(const char* math_expr, double* res) 
   char* ptr = expr;
   bool prev_was_num = false;
 
-  StackDouble* num_stack = StackDoubleNew();
+  StackDouble* num_stack = StackNew(double);
   if (!num_stack) {
     return kBasicCalcAllocationFail;
   }
-  StackOperation* op_stack = StackOperationNew();
+  StackOperation* op_stack = StackNew(MathOperation);
   if (!op_stack) {
     error = kBasicCalcAllocationFail;
     goto cleanup;
@@ -459,7 +458,7 @@ BasicCalcError CALL_CONV BasicCalculateExpr(const char* math_expr, double* res) 
         prev_was_num = false;
         break;
       case '(':
-        op_stack = StackOperationPush(op_stack, op_map[kOpenBrace]);
+        op_stack = StackPush(op_stack, op_map[kOpenBrace]);
         if (!op_stack) {
           error = kBasicCalcAllocationFail;
           goto cleanup;
@@ -515,8 +514,8 @@ BasicCalcError CALL_CONV BasicCalculateExpr(const char* math_expr, double* res) 
     *res = num_stack->top;
   }
 cleanup:
-  StackDoubleDelete(num_stack);
-  StackOperationDelete(op_stack);
+  StackDelete(num_stack);
+  StackDelete(op_stack);
   free(expr);
   return error;
 }
