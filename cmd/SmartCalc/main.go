@@ -51,45 +51,45 @@ func main() {
 	}
 
 	ddata, err := dc.Calculate(calc.DepositConditions{
-		TermType:     0,
+		TermType:     1,
 		Term:         120,
-		Cap:          0,
-		PayFreq:      2,
+		Cap:          1,
+		PayFreq:      0,
 		TaxRate:      13,
-		KeyRate:      8.5,
+		KeyRate:      16,
 		Sum:          1000000,
 		IntrRate:     13.4,
 		NonTakingRem: 0,
-		StartDate:    [3]int{2023, 8, 13},
+		StartDate:    [3]int{2024, 8, 13},
 		Fund: []calc.DepositTransaction{
 			{
 				Payout: calc.DepositPayout{
 					Date: [3]int{
-						2023, 8, 13,
+						2024, 8, 13,
 					},
 					Sum: 5000,
 				},
-				Freq: 2,
+				Freq: 1,
 			},
 			{
 				Payout: calc.DepositPayout{
 					Date: [3]int{
-						2023, 12, 12,
+						2025, 4, 5,
 					},
-					Sum: 4000,
+					Sum: 10000,
 				},
-				Freq: 0,
+				Freq: 1,
 			},
 		},
 		Wth: []calc.DepositTransaction{
 			{
 				Payout: calc.DepositPayout{
 					Date: [3]int{
-						2024, 4, 5,
+						2024, 12, 12,
 					},
-					Sum: 10000,
+					Sum: 4000,
 				},
-				Freq: 1,
+				Freq: 0,
 			},
 		},
 	})

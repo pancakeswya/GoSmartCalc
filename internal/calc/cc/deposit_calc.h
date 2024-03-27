@@ -14,12 +14,21 @@ typedef enum { kDepositCalcErrorSuccess, kDepositCalcErrorAllocationFail } Depos
 typedef enum { kDepositTermTypeDay, kDepositTermTypeMonth, kDepositTermTypeYear } DepositTermType;
 
 typedef enum {
-  kDepositPayFreqEvDay,
+  kDepositTransactionFreqOnce = 0,
+  kDepositTransactionFreqEvMon,
+  kDepositTransactionFreqEv2Mon,
+  kDepositTransactionFreqQuart,
+  kDepositTransactionFreqEvHalfYear = 6,
+  kDepositTransactionFreqEvYear = 12
+} DepositTransactionFreq;
+
+typedef enum {
+  kDepositPayFreqEvDay = 0,
   kDepositPayFreqEvWeek,
   kDepositPayFreqEvMon,
   kDepositPayFreqEvQuart,
-  kDepositPayFreqEvHalfYear = 6,
-  kDepositPayFreqEvYear = 12
+  kDepositPayFreqEvHalfYear,
+  kDepositPayFreqEvYear
 } DepositPayFreq;
 
 typedef struct {
@@ -29,7 +38,7 @@ typedef struct {
 
 typedef struct {
   DepositPayout payout;
-  DepositPayFreq freq;
+  DepositTransactionFreq freq;
 } DepositTransaction;
 
 typedef struct {
@@ -66,7 +75,7 @@ typedef struct {
   DepositTransaction* wth;
 } DepositConditions;
 
-extern CALC_API DepositCalcError DepositCalculate(DepositConditions* conds, DepositData* data);
+extern CALC_API DepositCalcError DepositCalculate(const DepositConditions* conds, DepositData* data);
 extern CALC_API void DepositDestroyData(DepositData* data);
 
 #ifdef __cplusplus

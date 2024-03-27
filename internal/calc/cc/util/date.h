@@ -70,23 +70,23 @@ static inline int DateDaysInYear(const Date* date) {
 }
 
 static inline int DateDaysTo(Date* src, Date* dst) {
-  return (int)difftime(mktime(src), mktime(dst)) / (60 * 60 * 24);
+  return (int)difftime(mktime(dst), mktime(src)) / (60 * 60 * 24);
 }
 
 static inline bool DateLess(Date* mdt, Date* odt) {
   return mktime(mdt) < mktime(odt);
 }
 
-static inline bool DateGreater(Date* mdt, Date* odt) {
-  return mktime(odt) < mktime(mdt);
-}
-
 static inline bool DateLessEqual(Date* mdt, Date* odt) {
   return mktime(mdt) <= mktime(odt);
 }
 
+static inline bool DateGreater(Date* mdt, Date* odt) {
+  return mktime(odt) < mktime(mdt);
+}
+
 static inline bool DateGreaterEqual(Date* mdt, Date* odt) {
-  return mktime(mdt) >= mktime(odt);
+  return mktime(odt) <= mktime(mdt);
 }
 
 static inline bool DateEqual(Date* mdt, Date* odt) {

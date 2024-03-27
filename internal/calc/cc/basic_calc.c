@@ -119,7 +119,7 @@ static const MathOperation op_map[] = {
      .priority = kBrace}
 };
 
-BasicCalcError FindOperation(char op, bool prev_was_num, MathOperation* operation) {
+static BasicCalcError FindOperation(char op, bool prev_was_num, MathOperation* operation) {
   switch (op) {
     case '^':
       if (!prev_was_num) {

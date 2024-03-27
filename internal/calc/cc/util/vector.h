@@ -31,7 +31,7 @@ static inline void VectorDelete(void* vec) {
   free(GetHeader(vec));
 }
 
-static void* VectorAllocNewMember(void* vec, size_t member_size) {
+static void* VectorRealloc(void* vec, size_t member_size) {
   size_t* header = GetHeader(vec);
   size_t* size = header;
   size_t* cap = header + 1;
@@ -53,6 +53,6 @@ static void* VectorAllocNewMember(void* vec, size_t member_size) {
 }
 
 #define VectorNew(_type) VectorInit(sizeof(_type))
-#define VectorPush(_vec, _val) ((_vec = VectorAllocNewMember(_vec, sizeof(_val))) ? (_vec)[VectorSize(_vec) - 1] = _val, 1 : 0)
+#define VectorPush(_vec, _val) ((_vec = VectorRealloc(_vec, sizeof(_val))) ? (_vec)[VectorSize(_vec) - 1] = _val, 1 : 0)
 
 #endif // SMARTCALC_INTERNAL_UTIL_CC_CORE_VECTOR_H_

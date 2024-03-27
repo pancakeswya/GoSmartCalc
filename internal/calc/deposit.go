@@ -77,6 +77,16 @@ type (
 	}
 )
 
+// transaction payout frequency
+const (
+	NumDepositTransactionFreqOnce       = int(C.kDepositTransactionFreqOnce)
+	NumDepositTransactionFreqEvMon      = int(C.kDepositTransactionFreqEvMon)
+	NumDepositTransactionFreqEv2Mon     = int(C.kDepositTransactionFreqEv2Mon)
+	NumDepositTransactionFreqQuart      = int(C.kDepositTransactionFreqQuart)
+	NumDepositTransactionFreqEvHalfYear = int(C.kDepositTransactionFreqEvHalfYear)
+	NumDepositTransactionFreqEvYear     = int(C.kDepositTransactionFreqEvYear)
+)
+
 // deposit payout frequency
 const (
 	NumDepositPayFreqEvDay      = int(C.kDepositPayFreqEvDay)
@@ -207,7 +217,7 @@ func goTransaction2C(goTransactions []DepositTransaction) (*C.DepositTransaction
 					C.int(goTransaction.Payout.Date[2]),
 				),
 			},
-			freq: C.DepositPayFreq(goTransaction.Freq),
+			freq: C.DepositTransactionFreq(goTransaction.Freq),
 		})
 		if cerr != C.kDepositCalcErrorSuccess {
 			return nil, cerr
