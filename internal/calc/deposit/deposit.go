@@ -1,9 +1,9 @@
-package calc
+package depositcalc
 
 /*
 
-  #include "cc/deposit_calc.h"
-  #include "cc/util/vector.h"
+  #include "../cc/deposit_calc.h"
+  #include "../cc/util/vector.h"
 
   typedef typeof(&DepositCalculate) DepositCalcFnPtr;
   typedef typeof(&DepositDestroyData) DepositDestroyDataFnPtr;
@@ -31,23 +31,22 @@ import (
 	"errors"
 	"github.com/pancakeswya/GoSmartCalc/pkg/cconv"
 	"github.com/pancakeswya/GoSmartCalc/pkg/dll"
-	"slices"
 	"unsafe"
 )
 
-type DepositCalcFn func(DepositConditions) (DepositData, error)
+type CalcFn func(Conditions) (Data, error)
 
 type (
-	DepositPayout struct {
+	Payout struct {
 		Date [3]int
 		Sum  float64
 	}
-	DepositTransaction struct {
-		Payout DepositPayout
+	Transaction struct {
+		Payout Payout
 		Freq   int
 	}
-	DepositData struct {
-		Replen     []DepositPayout
+	Data struct {
+		Replen     []Payout
 		PayDates   [][]int
 		Payment    []float64
 		Tax        []float64
@@ -58,7 +57,7 @@ type (
 		TaxSum     float64
 		Total      float64
 	}
-	DepositConditions struct {
+	Conditions struct {
 		TermType     int
 		Term         int
 		Cap          int
@@ -69,66 +68,72 @@ type (
 		IntrRate     float64
 		NonTakingRem float64
 		StartDate    [3]int
-		Fund         []DepositTransaction
-		Wth          []DepositTransaction
+		Fund         []Transaction
+		Wth          []Transaction
 	}
-	DepositCalc struct {
-		Calculate DepositCalcFn
+	Calc struct {
+		Calculate CalcFn
 	}
+)
+
+// functions api name
+const (
+	calculateFuncName   = "DepositCalculate"
+	destroyDataFuncName = "DepositDestroyData"
 )
 
 // transaction payout frequency
 const (
-	NumDepositTransactionFreqOnce       = int(C.kDepositTransactionFreqOnce)
-	NumDepositTransactionFreqEvMon      = int(C.kDepositTransactionFreqEvMon)
-	NumDepositTransactionFreqEv2Mon     = int(C.kDepositTransactionFreqEv2Mon)
-	NumDepositTransactionFreqQuart      = int(C.kDepositTransactionFreqQuart)
-	NumDepositTransactionFreqEvHalfYear = int(C.kDepositTransactionFreqEvHalfYear)
-	NumDepositTransactionFreqEvYear     = int(C.kDepositTransactionFreqEvYear)
+	TransactionFreqOnce       = int(C.kDepositTransactionFreqOnce)
+	TransactionFreqEvMon      = int(C.kDepositTransactionFreqEvMon)
+	TransactionFreqEv2Mon     = int(C.kDepositTransactionFreqEv2Mon)
+	TransactionFreqQuart      = int(C.kDepositTransactionFreqQuart)
+	TransactionFreqEvHalfYear = int(C.kDepositTransactionFreqEvHalfYear)
+	TransactionFreqEvYear     = int(C.kDepositTransactionFreqEvYear)
 )
 
 // deposit payout frequency
 const (
-	NumDepositPayFreqEvDay      = int(C.kDepositPayFreqEvDay)
-	NumDepositPayFreqEvWeek     = int(C.kDepositPayFreqEvWeek)
-	NumDepositPayFreqEvMon      = int(C.kDepositPayFreqEvMon)
-	NumDepositPayFreqEvQuart    = int(C.kDepositPayFreqEvQuart)
-	NumDepositPayFreqEvHalfYear = int(C.kDepositPayFreqEvHalfYear)
-	NumDepositPayFreqEvYear     = int(C.kDepositPayFreqEvYear)
+	PayFreqEvDay      = int(C.kDepositPayFreqEvDay)
+	PayFreqEvWeek     = int(C.kDepositPayFreqEvWeek)
+	PayFreqEvMon      = int(C.kDepositPayFreqEvMon)
+	PayFreqEvQuart    = int(C.kDepositPayFreqEvQuart)
+	PayFreqEvHalfYear = int(C.kDepositPayFreqEvHalfYear)
+	PayFreqEvYear     = int(C.kDepositPayFreqEvYear)
 )
 
 // deposit term type
 const (
-	NumDepositTermTypeDay   = int(C.kDepositTermTypeDay)
-	NumDepositTermTypeMonth = int(C.kDepositTermTypeMonth)
-	NumDepositTermTypeYear  = int(C.kDepositTermTypeYear)
+	TermTypeDay   = int(C.kDepositTermTypeDay)
+	TermTypeMonth = int(C.kDepositTermTypeMonth)
+	TermTypeYear  = int(C.kDepositTermTypeYear)
 )
 
 var (
-	ErrDepositCalcSuccess   = errors.New("success")
-	ErrDepositCalcAllocFail = errors.New("allocation fail")
+	ErrSuccess   = errors.New("success")
+	ErrAllocFail = errors.New("allocation fail")
 
 	errDepositCalcErrs = [...]error{
-		ErrDepositCalcSuccess,
-		ErrDepositCalcAllocFail,
+		ErrSuccess,
+		ErrAllocFail,
 	}
 )
 
-func NewDeposit(dl dll.Dll) (*DepositCalc, error) {
-	ptr, err := dl.GetSymbolPtr("DepositCalculate")
+func New(dl dll.Dll) (*Calc, error) {
+	ptr, err := dl.GetSymbolPtr(calculateFuncName)
 	if err != nil {
 		return nil, err
 	}
 	depositCalcFnPtr := C.DepositCalcFnPtr(ptr)
 
-	ptr, err = dl.GetSymbolPtr("DepositDestroyData")
+	ptr, err = dl.GetSymbolPtr(destroyDataFuncName)
 	if err != nil {
 		return nil, err
 	}
 	DepositDestroyDataFnPtr := C.DepositDestroyDataFnPtr(ptr)
 
-	dc := &DepositCalc{
-		Calculate: func(conds DepositConditions) (DepositData, error) {
+	dc := &Calc{
+		Calculate: func(conds Conditions) (Data, error) {
 			cconds := C.DepositConditions{
 				term_type: C.DepositTermType(conds.TermType),
 				term:      C.ushort(conds.Term),
@@ -149,24 +154,24 @@ func NewDeposit(dl dll.Dll) (*DepositCalc, error) {
 			var errCode C.DepositCalcError
 			cconds.fund, errCode = goTransaction2C(conds.Fund)
 			if errCode != C.kDepositCalcErrorSuccess {
-				return DepositData{}, errDepositCalcErrs[errCode]
+				return Data{}, errDepositCalcErrs[errCode]
 			}
 			cconds.wth, errCode = goTransaction2C(conds.Wth)
 			if errCode != C.kDepositCalcErrorSuccess {
-				return DepositData{}, errDepositCalcErrs[errCode]
+				return Data{}, errDepositCalcErrs[errCode]
 			}
 
 			var cdata C.DepositData
 			errCode = C.CallDepositCalcFnPtr(depositCalcFnPtr, &cconds, &cdata)
 			if errCode != C.kDepositCalcErrorSuccess {
-				return DepositData{}, errDepositCalcErrs[errCode]
+				return Data{}, errDepositCalcErrs[errCode]
 			}
 			defer func() {
 				C.VectorDelete(unsafe.Pointer(cconds.fund))
 				C.VectorDelete(unsafe.Pointer(cconds.wth))
 				C.CallDepositDestroyDataFnPtr(DepositDestroyDataFnPtr, &cdata)
 			}()
-			return DepositData{
+			return Data{
 				Replen:   cPayout2Go(cdata.replen, C.VectorSize(unsafe.Pointer(cdata.replen))),
 				PayDates: cDatesArray2Go(unsafe.Pointer(cdata.pay_dates), C.VectorSize(unsafe.Pointer(cdata.pay_dates))),
 				Payment:  cconv.CDoubleArray2Go(unsafe.Pointer(cdata.payments), uint64(C.VectorSize(unsafe.Pointer(cdata.payments)))),
@@ -202,7 +207,7 @@ func cDatesArray2Go(cDates unsafe.Pointer, len C.size_t) [][]int {
 	return goArray2d
 }
 
-func goTransaction2C(goTransactions []DepositTransaction) (*C.DepositTransaction, C.DepositCalcError) {
+func goTransaction2C(goTransactions []Transaction) (*C.DepositTransaction, C.DepositCalcError) {
 	cTransactions := C.VectorNewTransactionWrap()
 	if cTransactions == nil {
 		return nil, C.kDepositCalcErrorAllocationFail
@@ -226,13 +231,12 @@ func goTransaction2C(goTransactions []DepositTransaction) (*C.DepositTransaction
 	return cTransactions, C.kDepositCalcErrorSuccess
 }
 
-func cPayout2Go(cPayouts *C.DepositPayout, len C.size_t) []DepositPayout {
+func cPayout2Go(cPayouts *C.DepositPayout, len C.size_t) []Payout {
 	payouts := unsafe.Slice(cPayouts, len)
-	slices.Reverse(payouts)
-	goPayouts := make([]DepositPayout, len)
+	goPayouts := make([]Payout, len)
 	for i, payout := range payouts {
 		cPayout := C.DepositPayout(payout)
-		goPayouts[i] = DepositPayout{
+		goPayouts[i] = Payout{
 			Date: [3]int{
 				int(C.DateGetYear(&cPayout.date)),
 				int(C.DateGetMonth(&cPayout.date)),

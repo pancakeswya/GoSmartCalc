@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/pancakeswya/GoSmartCalc/internal/calc"
+	"github.com/pancakeswya/GoSmartCalc/internal/calc/basic"
+	"github.com/pancakeswya/GoSmartCalc/internal/calc/credit"
+	"github.com/pancakeswya/GoSmartCalc/internal/calc/deposit"
 	"github.com/pancakeswya/GoSmartCalc/pkg/dll"
 )
 
 func main() {
-	dl, err := dll.New("internal/calc/cc/build/Debug/calc.dll")
+	dl, err := dll.New("internal/calc/cc/build/libcalc.so")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -17,7 +19,7 @@ func main() {
 		return
 	}
 	defer dl.Close()
-	bc, err := calc.NewBasic(dl)
+	bc, err := basiccalc.New(dl)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -28,68 +30,68 @@ func main() {
 		return
 	}
 	fmt.Println(res)
-	cc, err := calc.NewCredit(dl)
+	cc, err := creditcalc.New(dl)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	data, err := cc.Calculate(calc.CreditConditions{
+	data, err := cc.Calculate(creditcalc.Conditions{
 		Sum:        1000000,
 		IntRate:    5,
 		Term:       15,
-		TermType:   1,
-		CreditType: 1,
+		TermType:   creditcalc.TermTypeYear,
+		CreditType: creditcalc.TypeDiff,
 	})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	fmt.Println(data)
-	dc, err := calc.NewDeposit(dl)
+	dc, err := depositcalc.New(dl)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	ddata, err := dc.Calculate(calc.DepositConditions{
-		TermType:     1,
+	ddata, err := dc.Calculate(depositcalc.Conditions{
+		TermType:     depositcalc.TermTypeMonth,
 		Term:         120,
 		Cap:          1,
-		PayFreq:      0,
+		PayFreq:      depositcalc.PayFreqEvDay,
 		TaxRate:      13,
 		KeyRate:      16,
 		Sum:          1000000,
 		IntrRate:     13.4,
 		NonTakingRem: 0,
 		StartDate:    [3]int{2024, 8, 13},
-		Fund: []calc.DepositTransaction{
+		Fund: []depositcalc.Transaction{
 			{
-				Payout: calc.DepositPayout{
+				Payout: depositcalc.Payout{
 					Date: [3]int{
 						2024, 8, 13,
 					},
 					Sum: 5000,
 				},
-				Freq: 1,
+				Freq: depositcalc.TransactionFreqEvMon,
 			},
 			{
-				Payout: calc.DepositPayout{
+				Payout: depositcalc.Payout{
 					Date: [3]int{
 						2025, 4, 5,
 					},
 					Sum: 10000,
 				},
-				Freq: 1,
+				Freq: depositcalc.TransactionFreqEvMon,
 			},
 		},
-		Wth: []calc.DepositTransaction{
+		Wth: []depositcalc.Transaction{
 			{
-				Payout: calc.DepositPayout{
+				Payout: depositcalc.Payout{
 					Date: [3]int{
 						2024, 12, 12,
 					},
 					Sum: 4000,
 				},
-				Freq: 0,
+				Freq: depositcalc.TransactionFreqOnce,
 			},
 		},
 	})
